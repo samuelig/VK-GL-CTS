@@ -222,7 +222,7 @@ DepthStencilResolveTest::~DepthStencilResolveTest (void)
 
 bool DepthStencilResolveTest::isFeaturesSupported()
 {
-	m_context.requireDeviceFunctionality("VK_KHR_depth_stencil_resolve");
+	// m_context.requireDeviceFunctionality("VK_KHR_depth_stencil_resolve");
 	if (m_config.imageLayers > 1)
 		m_context.requireDeviceCoreFeature(DEVICE_CORE_FEATURE_GEOMETRY_SHADER);
 
@@ -243,31 +243,31 @@ bool DepthStencilResolveTest::isFeaturesSupported()
 	const vk::InstanceInterface&	instanceInterface	= m_context.getInstanceInterface();
 	instanceInterface.getPhysicalDeviceProperties2(physicalDevice, &deviceProperties);
 
-	// check if both modes are supported
-	VkResolveModeFlagBits depthResolveMode		= m_config.depthResolveMode;
-	VkResolveModeFlagBits stencilResolveMode		= m_config.stencilResolveMode;
-	if ((depthResolveMode != VK_RESOLVE_MODE_NONE) &&
-		!(depthResolveMode & dsResolveProperties.supportedDepthResolveModes))
-		TCU_THROW(NotSupportedError, "Depth resolve mode not supported");
-	if ((stencilResolveMode != VK_RESOLVE_MODE_NONE) &&
-		!(stencilResolveMode & dsResolveProperties.supportedStencilResolveModes))
-		TCU_THROW(NotSupportedError, "Stencil resolve mode not supported");
+	// // check if both modes are supported
+	// VkResolveModeFlagBits depthResolveMode		= m_config.depthResolveMode;
+	// VkResolveModeFlagBits stencilResolveMode		= m_config.stencilResolveMode;
+	// if ((depthResolveMode != VK_RESOLVE_MODE_NONE) &&
+	// 	!(depthResolveMode & dsResolveProperties.supportedDepthResolveModes))
+	// 	TCU_THROW(NotSupportedError, "Depth resolve mode not supported");
+	// if ((stencilResolveMode != VK_RESOLVE_MODE_NONE) &&
+	// 	!(stencilResolveMode & dsResolveProperties.supportedStencilResolveModes))
+	// 	TCU_THROW(NotSupportedError, "Stencil resolve mode not supported");
 
-	// check if the implementation supports setting the depth and stencil resolve
-	// modes to different values when one of those modes is VK_RESOLVE_MODE_NONE
-	if (dsResolveProperties.independentResolveNone)
-	{
-		if ((!dsResolveProperties.independentResolve) &&
-			(depthResolveMode != stencilResolveMode) &&
-			(depthResolveMode != VK_RESOLVE_MODE_NONE) &&
-			(stencilResolveMode != VK_RESOLVE_MODE_NONE))
-			TCU_THROW(NotSupportedError, "Implementation doesn't support diferent resolve modes");
-	}
-	else if (!dsResolveProperties.independentResolve && (depthResolveMode != stencilResolveMode))
-	{
-		// when independentResolveNone and independentResolve are VK_FALSE then both modes must be the same
-		TCU_THROW(NotSupportedError, "Implementation doesn't support diferent resolve modes");
-	}
+	// // check if the implementation supports setting the depth and stencil resolve
+	// // modes to different values when one of those modes is VK_RESOLVE_MODE_NONE
+	// if (dsResolveProperties.independentResolveNone)
+	// {
+	// 	if ((!dsResolveProperties.independentResolve) &&
+	// 		(depthResolveMode != stencilResolveMode) &&
+	// 		(depthResolveMode != VK_RESOLVE_MODE_NONE) &&
+	// 		(stencilResolveMode != VK_RESOLVE_MODE_NONE))
+	// 		TCU_THROW(NotSupportedError, "Implementation doesn't support diferent resolve modes");
+	// }
+	// else if (!dsResolveProperties.independentResolve && (depthResolveMode != stencilResolveMode))
+	// {
+	// 	// when independentResolveNone and independentResolve are VK_FALSE then both modes must be the same
+	// 	TCU_THROW(NotSupportedError, "Implementation doesn't support diferent resolve modes");
+	// }
 
 	return true;
 }
@@ -510,7 +510,7 @@ Move<VkRenderPass> DepthStencilResolveTest::createRenderPass (VkFormat vkformat)
 		attachmentRefStencil,								// const void*						pNext;
 		0u,													// deUint32							attachment;
 		layout,												// VkImageLayout					layout;
-		0u													// VkImageAspectFlags				aspectMask;
+		VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT													// VkImageAspectFlags				aspectMask;
 	);
 
 	const vk::VkImageLayout		singleSampleInitialLayout = (m_config.unusedResolve ? VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED);
@@ -535,26 +535,26 @@ Move<VkRenderPass> DepthStencilResolveTest::createRenderPass (VkFormat vkformat)
 		DE_NULL,												// const void*						pNext;
 		(m_config.unusedResolve ? VK_ATTACHMENT_UNUSED : 1u),	// deUint32							attachment;
 		layout,													// VkImageLayout					layout;
-		0u														// VkImageAspectFlags				aspectMask;
+		VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT														// VkImageAspectFlags				aspectMask;
 	);
 
 	std::vector<AttachmentDescription2> attachments;
 	attachments.push_back(multisampleAttachment);
 	attachments.push_back(singlesampleAttachment);
 
-	VkSubpassDescriptionDepthStencilResolve dsResolveDescription =
-	{
-		VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE,
-		DE_NULL,																// const void*						pNext;
-		m_config.depthResolveMode,												// VkResolveModeFlagBits			depthResolveMode;
-		m_config.stencilResolveMode,											// VkResolveModeFlagBits			stencilResolveMode;
-		&singlesampleAttachmentRef												// VkAttachmentReference2			pDepthStencilResolveAttachment;
-	};
+	// VkSubpassDescriptionDepthStencilResolve dsResolveDescription =
+	// {
+	// 	VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE,
+	// 	DE_NULL,																// const void*						pNext;
+	// 	m_config.depthResolveMode,												// VkResolveModeFlagBits			depthResolveMode;
+	// 	m_config.stencilResolveMode,											// VkResolveModeFlagBits			stencilResolveMode;
+	// 	&singlesampleAttachmentRef												// VkAttachmentReference2			pDepthStencilResolveAttachment;
+	// };
 
 	const SubpassDescription2 subpass					// VkSubpassDescription2
 	(
 														// VkStructureType						sType;
-		&dsResolveDescription,							// const void*							pNext;
+		DE_NULL,							// const void*							pNext;
 		(VkSubpassDescriptionFlags)0,					// VkSubpassDescriptionFlags			flags;
 		VK_PIPELINE_BIND_POINT_GRAPHICS,				// VkPipelineBindPoint					pipelineBindPoint;
 		0u,												// deUint32								viewMask;
@@ -828,96 +828,96 @@ void DepthStencilResolveTest::submit (void)
 
 	// Render
 	bool testingDepth = (m_config.verifyBuffer == VB_DEPTH);
-	if (testingDepth)
-	{
-		vkd.cmdBindPipeline(*commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_renderPipeline);
-		vkd.cmdDraw(*commandBuffer, 6u, 1u, 0u, 0u);
-	}
-	else
-	{
-		// For stencil we can set reference value for just one sample at a time
-		// so we need to do as many passes as there are samples, first half
-		// of samples is initialized with 1 and second half with 255
-		const deUint32 halfOfSamples = m_config.sampleCount >> 1;
-		for (deUint32 renderPass = 0 ; renderPass < m_config.sampleCount ; renderPass++)
-		{
-			deUint32 stencilReference = 1 + 254 * (renderPass >= halfOfSamples);
-			vkd.cmdBindPipeline(*commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_renderPipeline);
-			vkd.cmdPushConstants(*commandBuffer, *m_renderPipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0u, sizeof(renderPass), &renderPass);
-			vkd.cmdSetStencilReference(*commandBuffer, VK_STENCIL_FRONT_AND_BACK, stencilReference);
-			vkd.cmdDraw(*commandBuffer, 6u, 1u, 0u, 0u);
-		}
-	}
+	// if (testingDepth)
+	// {
+	// 	vkd.cmdBindPipeline(*commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_renderPipeline);
+	// 	vkd.cmdDraw(*commandBuffer, 6u, 1u, 0u, 0u);
+	// }
+	// else
+	// {
+	// 	// For stencil we can set reference value for just one sample at a time
+	// 	// so we need to do as many passes as there are samples, first half
+	// 	// of samples is initialized with 1 and second half with 255
+	// 	const deUint32 halfOfSamples = m_config.sampleCount >> 1;
+	// 	for (deUint32 renderPass = 0 ; renderPass < m_config.sampleCount ; renderPass++)
+	// 	{
+	// 		deUint32 stencilReference = 1 + 254 * (renderPass >= halfOfSamples);
+	// 		vkd.cmdBindPipeline(*commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *m_renderPipeline);
+	// 		vkd.cmdPushConstants(*commandBuffer, *m_renderPipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0u, sizeof(renderPass), &renderPass);
+	// 		vkd.cmdSetStencilReference(*commandBuffer, VK_STENCIL_FRONT_AND_BACK, stencilReference);
+	// 		vkd.cmdDraw(*commandBuffer, 6u, 1u, 0u, 0u);
+	// 	}
+	// }
 
 	RenderpassSubpass2::cmdEndRenderPass(vkd, *commandBuffer, &subpassEndInfo);
 
-	// Memory barriers between rendering and copying
-	{
-		const VkImageMemoryBarrier barrier =
-		{
-			VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-			DE_NULL,
+	// // Memory barriers between rendering and copying
+	// {
+	// 	const VkImageMemoryBarrier barrier =
+	// 	{
+	// 		VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+	// 		DE_NULL,
 
-			VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-			VK_ACCESS_TRANSFER_READ_BIT,
+	// 		VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+	// 		VK_ACCESS_TRANSFER_READ_BIT,
 
-			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+	// 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+	// 		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 
-			VK_QUEUE_FAMILY_IGNORED,
-			VK_QUEUE_FAMILY_IGNORED,
+	// 		VK_QUEUE_FAMILY_IGNORED,
+	// 		VK_QUEUE_FAMILY_IGNORED,
 
-			**m_singlesampleImage,
-			{
-				(m_config.separateDepthStencilLayouts) ? VkImageAspectFlags(testingDepth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_STENCIL_BIT) : m_config.aspectFlag,
-				0u,
-				1u,
-				0u,
-				m_config.viewLayers
-			}
-		};
+	// 		**m_singlesampleImage,
+	// 		{
+	// 			(m_config.separateDepthStencilLayouts) ? VkImageAspectFlags(testingDepth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_STENCIL_BIT) : m_config.aspectFlag,
+	// 			0u,
+	// 			1u,
+	// 			0u,
+	// 			m_config.viewLayers
+	// 		}
+	// 	};
 
-		vkd.cmdPipelineBarrier(*commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, DE_NULL, 0u, DE_NULL, 1u, &barrier);
-	}
+	// 	vkd.cmdPipelineBarrier(*commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, DE_NULL, 0u, DE_NULL, 1u, &barrier);
+	// }
 
-	// Copy image memory to buffers
-	const VkBufferImageCopy region =
-	{
-		0u,
-		0u,
-		0u,
-		{
-			VkImageAspectFlags(testingDepth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_STENCIL_BIT),
-			0u,
-			0u,
-			m_config.viewLayers,
-		},
-		{ 0u, 0u, 0u },
-		{ m_config.width, m_config.height, 1u }
-	};
+	// // Copy image memory to buffers
+	// const VkBufferImageCopy region =
+	// {
+	// 	0u,
+	// 	0u,
+	// 	0u,
+	// 	{
+	// 		VkImageAspectFlags(testingDepth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_STENCIL_BIT),
+	// 		0u,
+	// 		0u,
+	// 		m_config.viewLayers,
+	// 	},
+	// 	{ 0u, 0u, 0u },
+	// 	{ m_config.width, m_config.height, 1u }
+	// };
 
-	vkd.cmdCopyImageToBuffer(*commandBuffer, **m_singlesampleImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, **m_buffer, 1u, &region);
+	// vkd.cmdCopyImageToBuffer(*commandBuffer, **m_singlesampleImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, **m_buffer, 1u, &region);
 
-	// Memory barriers between copies and host access
-	{
-		const VkBufferMemoryBarrier barrier =
-		{
-			VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
-			DE_NULL,
+	// // Memory barriers between copies and host access
+	// {
+	// 	const VkBufferMemoryBarrier barrier =
+	// 	{
+	// 		VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+	// 		DE_NULL,
 
-			VK_ACCESS_TRANSFER_WRITE_BIT,
-			VK_ACCESS_HOST_READ_BIT,
+	// 		VK_ACCESS_TRANSFER_WRITE_BIT,
+	// 		VK_ACCESS_HOST_READ_BIT,
 
-			VK_QUEUE_FAMILY_IGNORED,
-			VK_QUEUE_FAMILY_IGNORED,
+	// 		VK_QUEUE_FAMILY_IGNORED,
+	// 		VK_QUEUE_FAMILY_IGNORED,
 
-			**m_buffer,
-			0u,
-			VK_WHOLE_SIZE
-		};
+	// 		**m_buffer,
+	// 		0u,
+	// 		VK_WHOLE_SIZE
+	// 	};
 
-		vkd.cmdPipelineBarrier(*commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0u, 0u, DE_NULL, 1u, &barrier, 0u, DE_NULL);
-	}
+	// 	vkd.cmdPipelineBarrier(*commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0u, 0u, DE_NULL, 1u, &barrier, 0u, DE_NULL);
+	// }
 
 	endCommandBuffer(vkd, *commandBuffer);
 
@@ -1079,10 +1079,10 @@ tcu::TestStatus DepthStencilResolveTest::iterate (void)
 	submit();
 
 	bool result = false;
-	if (m_config.verifyBuffer == VB_DEPTH)
-		result = verifyDepth();
-	else
-		result = verifyStencil();
+	// if (m_config.verifyBuffer == VB_DEPTH)
+	// 	result = verifyDepth();
+	// else
+	// 	result = verifyStencil();
 
 	if (result)
 		return tcu::TestStatus::pass("Pass");
@@ -1205,32 +1205,32 @@ TestInstance* PropertiesTestCase::createInstance (Context& context) const
 
 void PropertiesTestCase::checkSupport (Context& context) const
 {
-	context.requireDeviceFunctionality("VK_KHR_depth_stencil_resolve");
+	// context.requireDeviceFunctionality("VK_KHR_depth_stencil_resolve");
 }
 
 tcu::TestStatus PropertiesTestInstance::iterate (void)
 {
-	vk::VkPhysicalDeviceDepthStencilResolvePropertiesKHR dsrProperties;
-	dsrProperties.sType = vk::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES_KHR;
-	dsrProperties.pNext = nullptr;
+	// vk::VkPhysicalDeviceDepthStencilResolvePropertiesKHR dsrProperties;
+	// dsrProperties.sType = vk::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES_KHR;
+	// dsrProperties.pNext = nullptr;
 
-	vk::VkPhysicalDeviceProperties2 properties2;
-	properties2.sType = vk::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-	properties2.pNext = &dsrProperties;
+	// vk::VkPhysicalDeviceProperties2 properties2;
+	// properties2.sType = vk::VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+	// properties2.pNext = &dsrProperties;
 
-	m_context.getInstanceInterface().getPhysicalDeviceProperties2(m_context.getPhysicalDevice(), &properties2);
+	// m_context.getInstanceInterface().getPhysicalDeviceProperties2(m_context.getPhysicalDevice(), &properties2);
 
-	if ((dsrProperties.supportedDepthResolveModes & vk::VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR) == 0)
-		TCU_FAIL("supportedDepthResolveModes does not include VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR");
+	// if ((dsrProperties.supportedDepthResolveModes & vk::VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR) == 0)
+	// 	TCU_FAIL("supportedDepthResolveModes does not include VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR");
 
-	if ((dsrProperties.supportedStencilResolveModes & vk::VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR) == 0)
-		TCU_FAIL("supportedStencilResolveModes does not include VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR");
+	// if ((dsrProperties.supportedStencilResolveModes & vk::VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR) == 0)
+	// 	TCU_FAIL("supportedStencilResolveModes does not include VK_RESOLVE_MODE_SAMPLE_ZERO_BIT_KHR");
 
-	if ((dsrProperties.supportedStencilResolveModes & vk::VK_RESOLVE_MODE_AVERAGE_BIT_KHR) != 0)
-		TCU_FAIL("supportedStencilResolveModes includes forbidden VK_RESOLVE_MODE_AVERAGE_BIT_KHR");
+	// if ((dsrProperties.supportedStencilResolveModes & vk::VK_RESOLVE_MODE_AVERAGE_BIT_KHR) != 0)
+	// 	TCU_FAIL("supportedStencilResolveModes includes forbidden VK_RESOLVE_MODE_AVERAGE_BIT_KHR");
 
-	if (dsrProperties.independentResolve == VK_TRUE && dsrProperties.independentResolveNone != VK_TRUE)
-		TCU_FAIL("independentResolve supported but independentResolveNone not supported");
+	// if (dsrProperties.independentResolve == VK_TRUE && dsrProperties.independentResolveNone != VK_TRUE)
+	// 	TCU_FAIL("independentResolve supported but independentResolveNone not supported");
 
 	return tcu::TestStatus::pass("Pass");
 }
